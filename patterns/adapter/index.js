@@ -4,16 +4,14 @@
  * A construct which adapts an existing interface X to conform the required interface Y
 */
 
-// 3rd party API we need to work with to render an image
+// 3rd party API we must to work with to render an image
 class RGBRenderer {
-    static draw(colorRGB) {
-      console.log(colorRGB);
+    static draw(r, g, b) {
+      console.log(r, g, b);
     }
 }
 
-
 // Our self-developed custom API
-
 class ColorRGB {
     constructor(r, g, b) {
         this.r = r;
@@ -23,32 +21,41 @@ class ColorRGB {
 } 
 
 class ColorHEX {
-    constructor(hexString) {
-        this.hexString = hexString;
+    constructor(string) {
+        this.string = string;
     }
 }
 
 class Image {
     constructor(hexString) {
-        this.hexColor = new ColorHEX(hexString);
+        this.color = new ColorHEX(hexString);
+        this.adapter = null;
+    }
+    setAdapter(adapter) {
+        this.adapter = adapter;
+        return this;
     }
     render() {
-        const adapter = new HEXToRGBAdapter(this.hexColor);
-        RGBRenderer.draw(adapter);
+        if (this.adapter) {
+            this.adapter.render(this.color);
+        }
     }
 }
 
 // To render our image we need an adapter
-class HEXToRGBAdapter extends ColorRGB {
-    constructor(colorHex) {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(colorHex.hexString);
+class HEXToRGBAdapter {
+    hexToRgb(colorHex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(colorHex.string);
         const r = parseInt(result[1], 16);
         const g = parseInt(result[2], 16);
         const b = parseInt(result[3], 16);
-
-        super(r, g, b);
+        return new ColorRGB(r, g, b);
+    }
+    render(color) {
+        const rgb = this.hexToRgb(color);
+        RGBRenderer.draw(rgb.r, rgb.g, rgb.b);
     }
 }
 
 const image = new Image('#FFCC99');
-image.render();
+image.setAdapter(new HEXToRGBAdapter()).render();
